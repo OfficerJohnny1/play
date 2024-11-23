@@ -8,72 +8,53 @@
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <style>
-      /* Disable scrolling */
       html, body {
         margin: 0;
         padding: 0;
-        overflow: hidden; /* Prevent scrolling */
+        overflow: hidden;
         height: 100%; /* Ensure the body occupies the full viewport height */
+        background: #000; /* Optional: Background color */
       }
 
-      /* Ensure canvas fills the entire viewport */
       #unity-container {
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
-        height: calc(var(--vh, 1vh) * 100); /* Adjust dynamically for viewport height */
+        height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
       }
 
-      /* Unity Loading Bar */
-      #unity-loading-bar {
+      #unity-canvas {
+        z-index: 1; /* Ensure the canvas stays behind the input field */
+      }
+
+      #overlay-input-field {
         position: absolute;
+        z-index: 10; /* Ensure the input field is above everything */
+        display: none; /* Hidden by default */
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        text-align: center;
-      }
-
-      #unity-logo {
-        margin-bottom: 20px;
-      }
-
-      #unity-progress-bar-empty {
-        width: 100%;
-        height: 20px;
-        background-color: #e0e0e0;
-        border-radius: 10px;
-        overflow: hidden;
-        margin-top: 10px;
-      }
-
-      #unity-progress-bar-full {
-        height: 100%;
-        width: 0;
-        background-color: #4caf50;
-        transition: width 0.2s;
+        width: 80%;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        padding: 10px;
+        box-sizing: border-box;
       }
     </style>
   </head>
-  <body class="dark">
-    <div id="unity-container" class="unity-desktop">
+  <body>
+    <div id="unity-container">
       <canvas id="unity-canvas"></canvas>
     </div>
-    <div id="loading-cover" style="display:flex;">
-      <div id="unity-loading-bar">
-        <div id="unity-logo"><img src="logo.png" alt="Logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
-        </div>
-        <div class="spinner">Loading...</div>
-      </div>
-    </div>
-    <div id="unity-fullscreen-button" style="display: none;"></div>
+    <input id="overlay-input-field" type="text" placeholder="Type here...">
+
     <script>
-      const hideFullScreenButton = "true";
       const buildUrl = "Build";
       const loaderUrl = buildUrl + "/uno_multiplayer.loader.js";
       const config = {
@@ -88,12 +69,9 @@
 
       const container = document.querySelector("#unity-container");
       const canvas = document.querySelector("#unity-canvas");
-      const loadingCover = document.querySelector("#loading-cover");
-      const progressBarEmpty = document.querySelector("#unity-progress-bar-empty");
-      const progressBarFull = document.querySelector("#unity-progress-bar-full");
-      const fullscreenButton = document.querySelector("#unity-fullscreen-button");
+      const overlayInputField = document.querySelector("#overlay-input-field");
 
-      // Function to request fullscreen mode
+      // Fullscreen toggle
       function requestFullscreen() {
         if (canvas.requestFullscreen) {
           canvas.requestFullscreen();
@@ -106,91 +84,62 @@
         }
       }
 
-      // Enforce fullscreen on mobile devices
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (isMobile) {
-        document.addEventListener("DOMContentLoaded", () => {
-          requestFullscreen();
-        });
-
-        // Reapply fullscreen on interaction
-        document.body.addEventListener("touchstart", requestFullscreen, { once: true });
-        window.addEventListener("resize", requestFullscreen);
+      function exitFullscreen() {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
       }
 
-      const canFullscreen = (function() {
-        for (const key of [
-            'exitFullscreen',
-            'webkitExitFullscreen',
-            'webkitCancelFullScreen',
-            'mozCancelFullScreen',
-            'msExitFullscreen',
-          ]) {
-          if (key in document) {
-            return true;
-          }
-        }
-        return false;
-      }());
-
-      // Adjust viewport height dynamically for mobile browsers
-      function lockViewportHeight() {
-        const vh = window.innerHeight * 0.01; // 1% of the viewport height
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      // Show input field overlay
+      function showInputField() {
+        exitFullscreen(); // Exit fullscreen for better keyboard handling
+        overlayInputField.style.display = "block";
+        overlayInputField.focus();
       }
 
-      // Allow temporary scrolling for Unity InputField focus
-      document.addEventListener("focusin", (e) => {
-        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
-          document.body.style.overflow = "auto"; // Enable scrolling temporarily
-          e.target.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
+      // Hide input field overlay
+      function hideInputField() {
+        overlayInputField.style.display = "none";
+        requestFullscreen(); // Re-enter fullscreen mode after input
+      }
+
+      // Handle focus and blur events for the input field
+      overlayInputField.addEventListener("focus", () => {
+        document.body.style.overflow = "auto"; // Enable scrolling if needed
       });
 
-      document.addEventListener("focusout", () => {
+      overlayInputField.addEventListener("blur", () => {
         document.body.style.overflow = "hidden"; // Disable scrolling again
-        if (isMobile) {
-          requestFullscreen(); // Re-enter fullscreen mode after exiting input
-        }
+        hideInputField();
       });
 
-      // Call lockViewportHeight on load and resize
-      window.addEventListener("load", lockViewportHeight);
-      window.addEventListener("resize", lockViewportHeight);
+      // Hook into Unity's InputField system (example function call)
+      function openUnityInputField() {
+        showInputField();
+      }
 
+      // Example: Hook into Unity via an external function
+      window.openInputField = openUnityInputField;
+
+      // Initialize Unity instance
       const script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
-          // Update progress bar
-          progressBarFull.style.width = `${100 * progress}%`;
+          // Optional: Implement loading progress bar updates
         }).then((unityInstance) => {
-          // Hide the loading screen once the game is ready
-          loadingCover.style.display = "none";
-          if (canFullscreen) {
-            if (!hideFullScreenButton) {
-              fullscreenButton.style.display = "";
-            }
-            fullscreenButton.onclick = () => {
-              unityInstance.SetFullscreen(1);
-            };
-          }
+          // Example: Unity can call `openInputField` when needed
         }).catch((message) => {
           alert(message);
         });
       };
       document.body.appendChild(script);
-
-      window.addEventListener("resize", function() {
-        if (window.innerHeight > window.innerWidth) {
-          alert("Please rotate your device to landscape mode.");
-        }
-      });
-
-      // Initial check for orientation
-      if (window.innerHeight > window.innerWidth) {
-        alert("Please rotate your device to landscape mode.");
-      }
     </script>
   </body>
 </html>
