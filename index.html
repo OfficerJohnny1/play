@@ -93,6 +93,31 @@
       const progressBarFull = document.querySelector("#unity-progress-bar-full");
       const fullscreenButton = document.querySelector("#unity-fullscreen-button");
 
+      // Function to request fullscreen mode
+      function requestFullscreen() {
+        if (canvas.requestFullscreen) {
+          canvas.requestFullscreen();
+        } else if (canvas.webkitRequestFullscreen) {
+          canvas.webkitRequestFullscreen();
+        } else if (canvas.mozRequestFullScreen) {
+          canvas.mozRequestFullScreen();
+        } else if (canvas.msRequestFullscreen) {
+          canvas.msRequestFullscreen();
+        }
+      }
+
+      // Enforce fullscreen on mobile devices
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        document.addEventListener("DOMContentLoaded", () => {
+          requestFullscreen();
+        });
+
+        // Reapply fullscreen on interaction
+        document.body.addEventListener("touchstart", requestFullscreen, { once: true });
+        window.addEventListener("resize", requestFullscreen);
+      }
+
       const canFullscreen = (function() {
         for (const key of [
             'exitFullscreen',
