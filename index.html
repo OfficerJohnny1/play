@@ -149,6 +149,9 @@
 
       document.addEventListener("focusout", () => {
         document.body.style.overflow = "hidden"; // Disable scrolling again
+        if (isMobile) {
+          requestFullscreen(); // Re-enter fullscreen mode after exiting input
+        }
       });
 
       // Call lockViewportHeight on load and resize
