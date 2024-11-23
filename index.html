@@ -2,7 +2,6 @@
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Officer Johnny</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
@@ -12,8 +11,8 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
-        height: 100%; /* Ensure the body occupies the full viewport height */
-        background: #000; /* Optional: Background color */
+        height: 100%;
+        background: #000;
       }
 
       #unity-container {
@@ -27,24 +26,31 @@
         align-items: center;
       }
 
-      #unity-canvas {
-        z-index: 1; /* Ensure the canvas stays behind the input field */
-      }
-
-      #overlay-input-field {
+      #unity-loading-bar {
         position: absolute;
-        z-index: 10; /* Ensure the input field is above everything */
-        display: none; /* Hidden by default */
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 80%;
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        font-size: 16px;
-        padding: 10px;
-        box-sizing: border-box;
+        text-align: center;
+      }
+
+      #unity-logo {
+        margin-bottom: 20px;
+      }
+
+      #unity-progress-bar-empty {
+        width: 100%;
+        height: 20px;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      #unity-progress-bar-full {
+        height: 100%;
+        width: 0;
+        background-color: #4caf50;
+        transition: width 0.2s;
       }
     </style>
   </head>
@@ -52,8 +58,12 @@
     <div id="unity-container">
       <canvas id="unity-canvas"></canvas>
     </div>
-    <input id="overlay-input-field" type="text" placeholder="Type here...">
-
+    <div id="unity-loading-bar">
+      <div id="unity-logo"><img src="logo.png" alt="Logo"></div>
+      <div id="unity-progress-bar-empty">
+        <div id="unity-progress-bar-full"></div>
+      </div>
+    </div>
     <script>
       const buildUrl = "Build";
       const loaderUrl = buildUrl + "/uno_multiplayer.loader.js";
@@ -69,72 +79,18 @@
 
       const container = document.querySelector("#unity-container");
       const canvas = document.querySelector("#unity-canvas");
-      const overlayInputField = document.querySelector("#overlay-input-field");
-
-      // Fullscreen toggle
-      function requestFullscreen() {
-        if (canvas.requestFullscreen) {
-          canvas.requestFullscreen();
-        } else if (canvas.webkitRequestFullscreen) {
-          canvas.webkitRequestFullscreen();
-        } else if (canvas.mozRequestFullScreen) {
-          canvas.mozRequestFullScreen();
-        } else if (canvas.msRequestFullscreen) {
-          canvas.msRequestFullscreen();
-        }
-      }
-
-      function exitFullscreen() {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
-      }
-
-      // Show input field overlay
-      function showInputField() {
-        exitFullscreen(); // Exit fullscreen for better keyboard handling
-        overlayInputField.style.display = "block";
-        overlayInputField.focus();
-      }
-
-      // Hide input field overlay
-      function hideInputField() {
-        overlayInputField.style.display = "none";
-        requestFullscreen(); // Re-enter fullscreen mode after input
-      }
-
-      // Handle focus and blur events for the input field
-      overlayInputField.addEventListener("focus", () => {
-        document.body.style.overflow = "auto"; // Enable scrolling if needed
-      });
-
-      overlayInputField.addEventListener("blur", () => {
-        document.body.style.overflow = "hidden"; // Disable scrolling again
-        hideInputField();
-      });
-
-      // Hook into Unity's InputField system (example function call)
-      function openUnityInputField() {
-        showInputField();
-      }
-
-      // Example: Hook into Unity via an external function
-      window.openInputField = openUnityInputField;
+      const loadingBar = document.querySelector("#unity-loading-bar");
+      const progressBarFull = document.querySelector("#unity-progress-bar-full");
 
       // Initialize Unity instance
       const script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
-          // Optional: Implement loading progress bar updates
+          loadingBar.style.display = "block";
+          progressBarFull.style.width = `${100 * progress}%`;
         }).then((unityInstance) => {
-          // Example: Unity can call `openInputField` when needed
+          loadingBar.style.display = "none";
         }).catch((message) => {
           alert(message);
         });
