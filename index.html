@@ -172,16 +172,13 @@
       };
       document.body.appendChild(script);
 
-      // Function to enter fullscreen (iOS)
+      // Function to enter fullscreen (iOS Safari with WebKit)
       function enterFullscreen() {
-        if (canvas.requestFullscreen) {
-          canvas.requestFullscreen();
-        } else if (canvas.mozRequestFullScreen) { // Firefox
-          canvas.mozRequestFullScreen();
-        } else if (canvas.webkitRequestFullscreen) { // Chrome, Safari
+        // For iOS Safari, use webkitRequestFullscreen
+        if (canvas.webkitRequestFullscreen) {
           canvas.webkitRequestFullscreen();
-        } else if (canvas.msRequestFullscreen) { // IE/Edge
-          canvas.msRequestFullscreen();
+        } else if (canvas.requestFullscreen) { // For other browsers
+          canvas.requestFullscreen();
         }
       }
 
