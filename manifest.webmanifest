@@ -2,10 +2,10 @@
     "name": "Officer Johnny",
     "short_name": "Officer Johnny",
     "start_url": "index.html",
-    "display": "fullscreen",
+    "display": "standalone",
     "background_color": "#000000",
     "theme_color": "#000",
-    "description": "",
+    "description": "A game one",
     "icons": [{
       "src": "TemplateData/icons/unity-logo-dark.png",
       "sizes": "144x144",
