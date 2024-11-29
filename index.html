@@ -3,69 +3,63 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
     <title>Unity WebGL Player | Officer Johnny</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
+
+    <!-- Add this for fullscreen and web app prompt styling -->
     <style>
-      /* Full screen overlay for landscape prompt */
+      /* Overlay for rotating to landscape */
       #landscape-overlay {
         position: fixed;
         top: 0;
         left: 0;
-        right: 0;
-        bottom: 0;
+        width: 100%;
+        height: 100%;
         background-color: rgba(0, 0, 0, 0.8);
-        color: white;
         display: none;
+        color: white;
         justify-content: center;
         align-items: center;
+        font-size: 18px;
         text-align: center;
         z-index: 1000;
+        padding: 20px;
       }
-      #landscape-overlay h1 {
-        font-size: 2em;
-        margin: 0;
-      }
-      #landscape-overlay p {
-        font-size: 1.2em;
+      
+      #landscape-overlay .message {
+        font-size: 22px;
+        font-weight: bold;
       }
 
-      /* Add to Home Screen Popup */
-      #home-screen-popup {
+      /* Overlay for adding to home screen */
+      #add-to-home-overlay {
         position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 128, 0, 0.8);
+        bottom: 10%;
+        left: 0;
+        right: 0;
+        background-color: #333;
         color: white;
-        padding: 15px;
-        font-size: 16px;
-        border-radius: 8px;
         text-align: center;
-        width: 80%;
-        z-index: 1001;
-        display: none;
-      }
-
-      #home-screen-popup button {
-        margin-top: 10px;
         padding: 10px;
-        background: green;
-        color: white;
+        display: none;
+        z-index: 1001;
+      }
+      #add-to-home-overlay button {
+        background-color: #ff4081;
         border: none;
-        border-radius: 5px;
+        color: white;
+        padding: 10px;
         cursor: pointer;
+      }
+      #add-to-home-overlay button:hover {
+        background-color: #ff80bf;
       }
     </style>
   </head>
+
   <body>
-    <div id="landscape-overlay">
-      <h1>Please rotate to landscape mode</h1>
-      <p>For a better gaming experience, please rotate your device.</p>
-    </div>
-    
     <div id="unity-container">
       <canvas id="unity-canvas" width=1920 height=1080 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
@@ -76,16 +70,21 @@
       </div>
       <div id="unity-warning"> </div>
     </div>
-    
-    <div id="home-screen-popup">
-      <p>To add this app to your home screen, tap the share button and select "Add to Home Screen".</p>
-      <button id="home-screen-btn">Add to Home Screen</button>
+
+    <!-- Full screen overlay for landscape mode -->
+    <div id="landscape-overlay">
+      <div class="message">
+        Please rotate your device to landscape mode for the best experience.
+      </div>
+    </div>
+
+    <!-- Overlay for adding to home screen -->
+    <div id="add-to-home-overlay">
+      <p>For a better experience, add this app to your home screen!</p>
+      <button id="add-to-home-button">Add to Home Screen</button>
     </div>
 
     <script>
-      let deferredPrompt;
-      let homeScreenAdded = false;
-
       window.addEventListener("load", function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.register("ServiceWorker.js");
@@ -97,10 +96,10 @@
       var loadingBar = document.querySelector("#unity-loading-bar");
       var progressBarFull = document.querySelector("#unity-progress-bar-full");
       var warningBanner = document.querySelector("#unity-warning");
-      var landscapeOverlay = document.querySelector("#landscape-overlay");
-      var homeScreenPopup = document.querySelector("#home-screen-popup");
-      var homeScreenBtn = document.querySelector("#home-screen-btn");
 
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
@@ -140,7 +139,41 @@
         document.getElementsByTagName('head')[0].appendChild(meta);
       }
 
-      loadingBar.style.display = "block";
+      // Handle the landscape mode overlay
+      function checkOrientation() {
+        if (window.innerHeight > window.innerWidth) {
+          document.getElementById('landscape-overlay').style.display = 'flex';
+        } else {
+          document.getElementById('landscape-overlay').style.display = 'none';
+        }
+      }
+
+      window.addEventListener('resize', checkOrientation);
+      checkOrientation();
+
+      // Prompt for adding to home screen
+      let deferredPrompt;
+      const addToHomeScreenOverlay = document.getElementById('add-to-home-overlay');
+      const addToHomeButton = document.getElementById('add-to-home-button');
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        addToHomeScreenOverlay.style.display = 'block';
+      });
+
+      addToHomeButton.addEventListener('click', () => {
+        addToHomeScreenOverlay.style.display = 'none';
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted the A2HS prompt');
+          } else {
+            console.log('User dismissed the A2HS prompt');
+          }
+          deferredPrompt = null;
+        });
+      });
 
       var script = document.createElement("script");
       script.src = loaderUrl;
@@ -154,57 +187,6 @@
         });
       };
       document.body.appendChild(script);
-
-      // Landscape Mode Detection
-      function checkOrientation() {
-        if (window.innerHeight > window.innerWidth) {
-          landscapeOverlay.style.display = "flex";  // Show the overlay
-        } else {
-          landscapeOverlay.style.display = "none"; // Hide the overlay
-        }
-      }
-
-      window.addEventListener("resize", checkOrientation);
-      checkOrientation();
-
-      // iOS Add to Home Screen Prompt
-      window.addEventListener('beforeinstallprompt', (e) => {
-        // Prevent the default behavior (which is showing the native prompt)
-        e.preventDefault();
-        deferredPrompt = e;
-        // Show custom prompt for iOS
-        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-          showIOSPrompt();
-        } else {
-          showHomeScreenPopup();
-        }
-      });
-
-      function showIOSPrompt() {
-        // Display a custom message or modal for iOS users with instructions to add to home screen
-        if (!homeScreenAdded) {
-          homeScreenPopup.style.display = 'block';
-        }
-      }
-
-      function showHomeScreenPopup() {
-        // Show the standard home screen popup on other devices (Android)
-        if (!homeScreenAdded) {
-          homeScreenPopup.style.display = 'block';
-        }
-      }
-
-      homeScreenBtn.addEventListener('click', function() {
-        homeScreenPopup.style.display = 'none';
-        homeScreenAdded = true;
-        // Optionally, store to localStorage or a variable to prevent showing this prompt again
-        localStorage.setItem('homeScreenAdded', 'true');
-      });
-
-      // Check if app is already added to home screen
-      if (localStorage.getItem('homeScreenAdded') === 'true') {
-        homeScreenPopup.style.display = 'none'; // Hide the popup if added already
-      }
     </script>
   </body>
 </html>
