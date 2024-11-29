@@ -8,19 +8,30 @@
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
     <style>
+      /* Full-screen overlay for Landscape Mode Warning */
       #landscape-warning {
         position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255, 0, 0, 0.8);
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
         color: white;
-        padding: 10px;
-        font-size: 16px;
         display: none;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-size: 24px;
         z-index: 1000;
+        flex-direction: column;
       }
 
+      #landscape-warning span {
+        font-weight: bold;
+        color: yellow;
+      }
+
+      /* Home Screen Popup */
       #home-screen-popup {
         position: fixed;
         bottom: 20px;
@@ -28,11 +39,27 @@
         transform: translateX(-50%);
         background: rgba(0, 128, 0, 0.8);
         color: white;
-        padding: 10px;
+        padding: 20px;
         font-size: 16px;
         display: none;
         z-index: 1000;
         border-radius: 8px;
+        text-align: center;
+        width: 80%;
+      }
+
+      #home-screen-popup button {
+        background-color: #fff;
+        color: #000;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      #home-screen-popup button:hover {
+        background-color: #ddd;
       }
     </style>
   </head>
@@ -48,14 +75,18 @@
       <div id="unity-warning"></div>
     </div>
 
-    <!-- Landscape Warning -->
+    <!-- Full-screen Landscape Warning -->
     <div id="landscape-warning">
-      Please rotate your device to landscape mode for the best experience.
+      <div>
+        Please <span>rotate</span> your device to <span>landscape</span> mode for the best experience.
+      </div>
     </div>
 
     <!-- Home Screen Popup -->
     <div id="home-screen-popup">
-      Tap the "Add to Home Screen" button to install the game for a better experience.
+      Tap the button below to <strong>add the game to your home screen</strong> for a better experience.
+      <br><br>
+      <button onclick="addToHomeScreen()">Add to Home Screen</button>
     </div>
 
     <script>
@@ -85,10 +116,10 @@
       function checkOrientation() {
         if (window.innerHeight > window.innerWidth) {
           // In portrait mode
-          landscapeWarning.style.display = "block";
+          landscapeWarning.style.display = "flex"; // Show full screen warning
         } else {
           // In landscape mode
-          landscapeWarning.style.display = "none";
+          landscapeWarning.style.display = "none"; // Hide full screen warning
         }
       }
 
@@ -103,6 +134,27 @@
       homeScreenPopup.addEventListener('click', function () {
         homeScreenPopup.style.display = 'none';
       });
+
+      // Function to handle "Add to Home Screen"
+      function addToHomeScreen() {
+        // Detect if it's a mobile device and show the install prompt (using Web App Manifest)
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+          alert('You already have the game installed!');
+        } else {
+          // Prompt user to install the app on home screen (for mobile web browsers)
+          if (window.deferredPrompt) {
+            window.deferredPrompt.prompt();
+            window.deferredPrompt.userChoice.then(function (choiceResult) {
+              if (choiceResult.outcome === 'accepted') {
+                console.log('User added to home screen');
+              } else {
+                console.log('User dismissed the prompt');
+              }
+              window.deferredPrompt = null;
+            });
+          }
+        }
+      }
 
       // Shows a temporary message banner/ribbon for a few seconds, or
       // a permanent error message on top of the canvas if type=='error'.
@@ -166,6 +218,11 @@
         });
       };
       document.body.appendChild(script);
+
+      // Store the deferred prompt so it can be triggered later
+      window.addEventListener('beforeinstallprompt', (e) => {
+        window.deferredPrompt = e;
+      });
     </script>
   </body>
 </html>
