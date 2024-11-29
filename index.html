@@ -30,6 +30,20 @@
         padding: 10px;
         border-radius: 10px;
       }
+
+      /* Button to add app to home screen */
+      #add-to-home {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: none; /* Hidden initially, shown based on conditions */
+      }
     </style>
   </head>
   <body>
@@ -49,6 +63,9 @@
       <span>Please rotate your device to landscape mode</span>
     </div>
 
+    <!-- Add to Home Screen Button -->
+    <button id="add-to-home" onclick="installApp()">Add to Home Screen</button>
+
     <script>
       window.addEventListener("load", function () {
         if ("serviceWorker" in navigator) {
@@ -62,6 +79,7 @@
       var progressBarFull = document.querySelector("#unity-progress-bar-full");
       var warningBanner = document.querySelector("#unity-warning");
       var landscapeOverlay = document.querySelector("#landscape-overlay");
+      var addToHomeBtn = document.querySelector("#add-to-home");
 
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
@@ -129,13 +147,12 @@
       window.addEventListener("orientationchange", checkOrientation);
       checkOrientation();
 
-      // Prompt to add web app to home screen
+      // Show "Add to Home Screen" button
       let deferredPrompt;
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        // Show your prompt here
-        unityShowBanner('Install this app on your home screen for quick access', 'info');
+        addToHomeBtn.style.display = 'block';
       });
 
       function installApp() {
@@ -152,9 +169,19 @@
         }
       }
 
+      // For iOS, prompt to add to home screen manually
+      function showiOSInstallPrompt() {
+        if (navigator.userAgent.match(/(iPhone|iPod|iPad)/i)) {
+          unityShowBanner('Tap the share button and select "Add to Home Screen"', 'info');
+        }
+      }
+
       window.addEventListener('appinstalled', (evt) => {
         unityShowBanner('App successfully installed!', 'success');
       });
+
+      // Call iOS prompt
+      showiOSInstallPrompt();
     </script>
   </body>
 </html>
