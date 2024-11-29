@@ -8,9 +8,8 @@
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
 
-    <!-- Add this for fullscreen and web app prompt styling -->
     <style>
-      /* Overlay for rotating to landscape */
+      /* Overlay for landscape mode */
       #landscape-overlay {
         position: fixed;
         top: 0;
@@ -19,42 +18,81 @@
         height: 100%;
         background-color: rgba(0, 0, 0, 0.8);
         display: none;
-        color: white;
         justify-content: center;
         align-items: center;
-        font-size: 18px;
-        text-align: center;
         z-index: 1000;
+        transition: opacity 0.3s ease-in-out;
+        color: white;
+        font-family: 'Arial', sans-serif;
+        text-align: center;
         padding: 20px;
       }
-      
+
       #landscape-overlay .message {
-        font-size: 22px;
+        font-size: 24px;
         font-weight: bold;
+        line-height: 1.4;
+        padding: 10px;
+        max-width: 80%;
       }
 
-      /* Overlay for adding to home screen */
+      /* iOS Add to Home Screen Overlay */
       #add-to-home-overlay {
         position: fixed;
         bottom: 10%;
-        left: 0;
-        right: 0;
-        background-color: #333;
-        color: white;
+        left: 10%;
+        right: 10%;
+        background-color: #f7f7f7;
+        color: #333;
         text-align: center;
-        padding: 10px;
-        display: none;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         z-index: 1001;
+        display: none;
+        transition: opacity 0.3s ease-in-out;
       }
-      #add-to-home-overlay button {
-        background-color: #ff4081;
-        border: none;
-        color: white;
-        padding: 10px;
+
+      #add-to-home-overlay p {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 500;
+        padding-bottom: 10px;
+      }
+
+      #add-to-home-overlay .instructions {
+        font-size: 16px;
+        font-weight: 400;
+        color: #888;
+        padding-bottom: 20px;
+      }
+
+      #add-to-home-overlay .close-btn {
+        font-size: 18px;
+        font-weight: bold;
+        color: #ff4081;
         cursor: pointer;
+        transition: color 0.3s;
       }
-      #add-to-home-overlay button:hover {
-        background-color: #ff80bf;
+
+      #add-to-home-overlay .close-btn:hover {
+        color: #ff80bf;
+      }
+
+      /* Mobile styles */
+      @media screen and (max-width: 600px) {
+        #landscape-overlay .message {
+          font-size: 20px;
+          max-width: 90%;
+        }
+
+        #add-to-home-overlay p {
+          font-size: 16px;
+        }
+
+        #add-to-home-overlay .instructions {
+          font-size: 14px;
+        }
       }
     </style>
   </head>
@@ -78,10 +116,13 @@
       </div>
     </div>
 
-    <!-- Overlay for adding to home screen -->
+    <!-- iOS Add to Home Screen Overlay -->
     <div id="add-to-home-overlay">
       <p>For a better experience, add this app to your home screen!</p>
-      <button id="add-to-home-button">Add to Home Screen</button>
+      <div class="instructions">
+        Tap the <strong>Share</strong> button below and select <strong>"Add to Home Screen"</strong>.
+      </div>
+      <span class="close-btn" onclick="closeAddToHomeOverlay()">Close</span>
     </div>
 
     <script>
@@ -97,9 +138,6 @@
       var progressBarFull = document.querySelector("#unity-progress-bar-full");
       var warningBanner = document.querySelector("#unity-warning");
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
@@ -143,37 +181,43 @@
       function checkOrientation() {
         if (window.innerHeight > window.innerWidth) {
           document.getElementById('landscape-overlay').style.display = 'flex';
+          document.getElementById('landscape-overlay').style.opacity = '1';
         } else {
-          document.getElementById('landscape-overlay').style.display = 'none';
+          document.getElementById('landscape-overlay').style.opacity = '0';
+          setTimeout(() => {
+            document.getElementById('landscape-overlay').style.display = 'none';
+          }, 300);  // Wait for opacity transition to finish before hiding
         }
       }
 
       window.addEventListener('resize', checkOrientation);
       checkOrientation();
 
-      // Prompt for adding to home screen
+      // Add to home screen prompt for iOS
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       let deferredPrompt;
       const addToHomeScreenOverlay = document.getElementById('add-to-home-overlay');
-      const addToHomeButton = document.getElementById('add-to-home-button');
+      const closeBtn = document.querySelector('.close-btn');
 
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        addToHomeScreenOverlay.style.display = 'block';
-      });
-
-      addToHomeButton.addEventListener('click', () => {
-        addToHomeScreenOverlay.style.display = 'none';
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted the A2HS prompt');
-          } else {
-            console.log('User dismissed the A2HS prompt');
-          }
-          deferredPrompt = null;
+      if (!isIOS) {
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          addToHomeScreenOverlay.style.display = 'block';
+          addToHomeScreenOverlay.style.opacity = '1';
         });
-      });
+
+        closeBtn.addEventListener('click', () => {
+          addToHomeScreenOverlay.style.opacity = '0';
+          setTimeout(() => {
+            addToHomeScreenOverlay.style.display = 'none';
+          }, 300);
+        });
+      } else {
+        // Custom iOS prompt for adding to home screen
+        addToHomeScreenOverlay.style.display = 'block';
+        addToHomeScreenOverlay.style.opacity = '1';
+      }
 
       var script = document.createElement("script");
       script.src = loaderUrl;
