@@ -70,6 +70,14 @@
         font-size: 24px;
         font-family: Arial, sans-serif;
       }
+
+      /* For better fullscreen behavior on iOS */
+      @media screen and (orientation: portrait) {
+        #unity-container {
+          height: 100%;
+          width: 100%;
+        }
+      }
     </style>
   </head>
   <body>
@@ -115,6 +123,20 @@
         }
       }
 
+      // Check screen orientation on load and resize
+      window.addEventListener("load", checkOrientation);
+      window.addEventListener("resize", checkOrientation);
+
+      // Ensure full-screen behavior
+      function adjustCanvasSize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+
+      // Adjust canvas size on load and resize
+      window.addEventListener("load", adjustCanvasSize);
+      window.addEventListener("resize", adjustCanvasSize);
+
       // Initialize Unity instance
       const script = document.createElement("script");
       script.src = loaderUrl;
@@ -130,9 +152,31 @@
       };
       document.body.appendChild(script);
 
-      // Check orientation on load and resize
-      window.addEventListener("load", checkOrientation);
-      window.addEventListener("resize", checkOrientation);
+      // iOS Home Screen Install Prompt
+      function isiOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      }
+
+      if (isiOS()) {
+        // Prompt user to add to home screen
+        const installBanner = document.createElement("div");
+        installBanner.style.position = "fixed";
+        installBanner.style.bottom = "20px";
+        installBanner.style.left = "50%";
+        installBanner.style.transform = "translateX(-50%)";
+        installBanner.style.padding = "10px 20px";
+        installBanner.style.backgroundColor = "#333";
+        installBanner.style.color = "#fff";
+        installBanner.style.borderRadius = "5px";
+        installBanner.style.fontSize = "16px";
+        installBanner.innerHTML = "For better experience, add this app to your home screen.";
+        document.body.appendChild(installBanner);
+
+        // Hide install banner after a few seconds
+        setTimeout(() => {
+          installBanner.style.display = "none";
+        }, 5000);
+      }
     </script>
   </body>
 </html>
