@@ -2,10 +2,7 @@
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <!-- Web App Mode for iOS (optional: makes it look like a native app when added to the home screen) -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <!-- Optional: Status bar style -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimal-ui">
     <title>Officer Johnny</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
@@ -73,29 +70,6 @@
         font-size: 24px;
         font-family: Arial, sans-serif;
       }
-
-      /* For better fullscreen behavior on iOS */
-      @media screen and (orientation: portrait) {
-        #unity-container {
-          height: 100%;
-          width: 100%;
-        }
-      }
-
-      /* Fullscreen button */
-      #fullscreen-button {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: #fff;
-        color: #000;
-        border: none;
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-        z-index: 10000;
-        border-radius: 5px;
-      }
     </style>
   </head>
   <body>
@@ -111,10 +85,6 @@
     <div id="landscape-warning">
       <p>Please rotate your device to <strong>landscape mode</strong> to play the game.</p>
     </div>
-    
-    <!-- Fullscreen Button -->
-    <button id="fullscreen-button">Go Fullscreen</button>
-
     <script>
       const buildUrl = "Build";
       const loaderUrl = buildUrl + "/uno_multiplayer_play.loader.js";
@@ -133,7 +103,6 @@
       const loadingBar = document.querySelector("#unity-loading-bar");
       const progressBarFull = document.querySelector("#unity-progress-bar-full");
       const landscapeWarning = document.querySelector("#landscape-warning");
-      const fullscreenButton = document.querySelector("#fullscreen-button");
 
       // Function to check orientation
       function checkOrientation() {
@@ -146,19 +115,12 @@
         }
       }
 
-      // Check screen orientation on load and resize
-      window.addEventListener("load", checkOrientation);
-      window.addEventListener("resize", checkOrientation);
-
-      // Ensure full-screen behavior
-      function adjustCanvasSize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+      // Function to hide the address bar on iPhones
+      function hideAddressBar() {
+        if (window.innerHeight <= window.outerHeight) {
+          window.scrollTo(0, 1); // Hides address bar on mobile browsers
+        }
       }
-
-      // Adjust canvas size on load and resize
-      window.addEventListener("load", adjustCanvasSize);
-      window.addEventListener("resize", adjustCanvasSize);
 
       // Initialize Unity instance
       const script = document.createElement("script");
@@ -175,20 +137,18 @@
       };
       document.body.appendChild(script);
 
-      // Function to enter fullscreen (iOS Safari with WebKit)
-      function enterFullscreen() {
-        // For iOS Safari, use webkitRequestFullscreen
-        if (canvas.webkitRequestFullscreen) {
-          canvas.webkitRequestFullscreen();
-        } else if (canvas.requestFullscreen) { // For other browsers
-          canvas.requestFullscreen();
-        }
-      }
-
-      // Fullscreen button click handler
-      fullscreenButton.addEventListener("click", function () {
-        enterFullscreen();
+      // Call hideAddressBar and checkOrientation on load and resize
+      window.addEventListener("load", () => {
+        hideAddressBar();
+        checkOrientation();
       });
+      window.addEventListener("resize", checkOrientation);
+
+      // Force fullscreen on iPhones in certain browsers
+      if (window.innerWidth && window.innerHeight) {
+        document.body.requestFullscreen = document.body.requestFullscreen || document.body.mozRequestFullscreen || document.body.webkitRequestFullscreen || document.body.msRequestFullscreen;
+        document.body.requestFullscreen();
+      }
     </script>
   </body>
 </html>
