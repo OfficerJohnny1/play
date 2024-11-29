@@ -7,9 +7,8 @@
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
-
     <style>
-      /* Overlay for landscape mode */
+      /* Full-screen overlay for portrait mode */
       #landscape-overlay {
         position: fixed;
         top: 0;
@@ -17,86 +16,22 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0, 0, 0, 0.8);
+        color: white;
         display: none;
         justify-content: center;
         align-items: center;
+        text-align: center;
         z-index: 1000;
-        transition: opacity 0.3s ease-in-out;
-        color: white;
-        font-family: 'Arial', sans-serif;
-        text-align: center;
-        padding: 20px;
       }
-
-      #landscape-overlay .message {
-        font-size: 24px;
+      #landscape-overlay span {
+        font-size: 2em;
         font-weight: bold;
-        line-height: 1.4;
+        border: 2px solid white;
         padding: 10px;
-        max-width: 80%;
-      }
-
-      /* iOS Add to Home Screen Overlay */
-      #add-to-home-overlay {
-        position: fixed;
-        bottom: 10%;
-        left: 10%;
-        right: 10%;
-        background-color: #f7f7f7;
-        color: #333;
-        text-align: center;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        z-index: 1001;
-        display: none;
-        transition: opacity 0.3s ease-in-out;
-      }
-
-      #add-to-home-overlay p {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 500;
-        padding-bottom: 10px;
-      }
-
-      #add-to-home-overlay .instructions {
-        font-size: 16px;
-        font-weight: 400;
-        color: #888;
-        padding-bottom: 20px;
-      }
-
-      #add-to-home-overlay .close-btn {
-        font-size: 18px;
-        font-weight: bold;
-        color: #ff4081;
-        cursor: pointer;
-        transition: color 0.3s;
-      }
-
-      #add-to-home-overlay .close-btn:hover {
-        color: #ff80bf;
-      }
-
-      /* Mobile styles */
-      @media screen and (max-width: 600px) {
-        #landscape-overlay .message {
-          font-size: 20px;
-          max-width: 90%;
-        }
-
-        #add-to-home-overlay p {
-          font-size: 16px;
-        }
-
-        #add-to-home-overlay .instructions {
-          font-size: 14px;
-        }
+        border-radius: 10px;
       }
     </style>
   </head>
-
   <body>
     <div id="unity-container">
       <canvas id="unity-canvas" width=1920 height=1080 tabindex="-1"></canvas>
@@ -106,23 +41,12 @@
           <div id="unity-progress-bar-full"></div>
         </div>
       </div>
-      <div id="unity-warning"> </div>
+      <div id="unity-warning"></div>
     </div>
 
-    <!-- Full screen overlay for landscape mode -->
+    <!-- Full-screen overlay -->
     <div id="landscape-overlay">
-      <div class="message">
-        Please rotate your device to landscape mode for the best experience.
-      </div>
-    </div>
-
-    <!-- iOS Add to Home Screen Overlay -->
-    <div id="add-to-home-overlay">
-      <p>For a better experience, add this app to your home screen!</p>
-      <div class="instructions">
-        Tap the <strong>Share</strong> button below and select <strong>"Add to Home Screen"</strong>.
-      </div>
-      <span class="close-btn" onclick="closeAddToHomeOverlay()">Close</span>
+      <span>Please rotate your device to landscape mode</span>
     </div>
 
     <script>
@@ -137,6 +61,7 @@
       var loadingBar = document.querySelector("#unity-loading-bar");
       var progressBarFull = document.querySelector("#unity-progress-bar-full");
       var warningBanner = document.querySelector("#unity-warning");
+      var landscapeOverlay = document.querySelector("#landscape-overlay");
 
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
@@ -169,7 +94,6 @@
         showBanner: unityShowBanner,
       };
 
-      // Mobile device style
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         var meta = document.createElement('meta');
         meta.name = 'viewport';
@@ -177,47 +101,7 @@
         document.getElementsByTagName('head')[0].appendChild(meta);
       }
 
-      // Handle the landscape mode overlay
-      function checkOrientation() {
-        if (window.innerHeight > window.innerWidth) {
-          document.getElementById('landscape-overlay').style.display = 'flex';
-          document.getElementById('landscape-overlay').style.opacity = '1';
-        } else {
-          document.getElementById('landscape-overlay').style.opacity = '0';
-          setTimeout(() => {
-            document.getElementById('landscape-overlay').style.display = 'none';
-          }, 300);  // Wait for opacity transition to finish before hiding
-        }
-      }
-
-      window.addEventListener('resize', checkOrientation);
-      checkOrientation();
-
-      // Add to home screen prompt for iOS
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      let deferredPrompt;
-      const addToHomeScreenOverlay = document.getElementById('add-to-home-overlay');
-      const closeBtn = document.querySelector('.close-btn');
-
-      if (!isIOS) {
-        window.addEventListener('beforeinstallprompt', (e) => {
-          e.preventDefault();
-          deferredPrompt = e;
-          addToHomeScreenOverlay.style.display = 'block';
-          addToHomeScreenOverlay.style.opacity = '1';
-        });
-
-        closeBtn.addEventListener('click', () => {
-          addToHomeScreenOverlay.style.opacity = '0';
-          setTimeout(() => {
-            addToHomeScreenOverlay.style.display = 'none';
-          }, 300);
-        });
-      } else {
-        // Custom iOS prompt for adding to home screen
-        addToHomeScreenOverlay.style.display = 'block';
-        addToHomeScreenOverlay.style.opacity = '1';
-      }
+      loadingBar.style.display = "block";
 
       var script = document.createElement("script");
       script.src = loaderUrl;
@@ -231,6 +115,46 @@
         });
       };
       document.body.appendChild(script);
+
+      // Check orientation and show overlay if in portrait mode
+      function checkOrientation() {
+        if (window.innerHeight > window.innerWidth) {
+          landscapeOverlay.style.display = 'flex';
+        } else {
+          landscapeOverlay.style.display = 'none';
+        }
+      }
+
+      window.addEventListener("resize", checkOrientation);
+      window.addEventListener("orientationchange", checkOrientation);
+      checkOrientation();
+
+      // Prompt to add web app to home screen
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show your prompt here
+        unityShowBanner('Install this app on your home screen for quick access', 'info');
+      });
+
+      function installApp() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('User accepted the install prompt');
+            } else {
+              console.log('User dismissed the install prompt');
+            }
+            deferredPrompt = null;
+          });
+        }
+      }
+
+      window.addEventListener('appinstalled', (evt) => {
+        unityShowBanner('App successfully installed!', 'success');
+      });
     </script>
   </body>
 </html>
