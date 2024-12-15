@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OAuth Callback</title>
+    <script>
+        // Function to extract parameters from the URL fragment (after the '#')
+        function getFragmentParameters() {
+            const fragment = window.location.hash.substring(1); // Remove the leading '#'
+            const params = new URLSearchParams(fragment);
+            return {
+                id_token: params.get('id_token'),
+                code: params.get('code'),
+                error: params.get('error')
+            };
+        }
+
+        // Extract the parameters
+        const params = getFragmentParameters();
+
+        console.log('Params ' + params);
+        // Verify and send the token/code back to the parent window
+        if (params.id_token || params.code) {
+            const data = {
+                id_token: params.id_token,
+                code: params.code
+            };
+            
+            // Log extracted data for debugging
+            console.log('Extracted data:', data);
+
+            // Send the data back to the parent window (Unity WebGL application)
+            window.opener.postMessage(data, window.opener.location.origin);
+        } else if (params.error) {
+            console.error('OAuth Error:', params.error);
+            window.opener.postMessage({ error: params.error }, window.opener.location.origin);
+        } else {
+            console.error('No valid token or code found in the URL fragment.');
+        }
+
+        // Close the window after sending the message
+        window.close();
+    </script>
+</head>
+<body>
+    <p>Processing authentication response, please wait...</p>
+</body>
+</html>
